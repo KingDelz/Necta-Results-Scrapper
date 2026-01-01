@@ -1,0 +1,512 @@
+url <- "https://onlinesys.necta.go.tz/results/"
+for (school in schoollist) {
+sch_url <- paste0(url, year, "/csee/results/" ,school, ".htm")
+#  Try to read the page ---------------------------------------------------
+webpage <- tryCatch(
+read_html(sch_url),
+error = function(e) {
+cat("Could not open:",sch_url, "\n")
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+)
+if (is.null(webpage)) next  # skip this school-year
+tables <- html_nodes(webpage, "table")
+if (length(tables) == 0) {
+cat("No table found for", school, "in", "\n")
+failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+next
+}
+first_table <- html_table(tables[[1]], fill = TRUE)
+first_table[] <- lapply(first_table, as.character)
+table <- first_table |>
+select(-X1) |>
+slice(1, 4) |>
+rename(I = X2, II = X3, III = X4, IV = X5, "0" = X6) |>
+slice(-1) |>
+pivot_longer(everything(), names_to = "Division", values_to = "Count") |>
+mutate(
+necta_exam_centre_no = school,
+Year = year
+)
+all_tables[[paste(school, year, sep = "_")]] <- table
+}
+read_html(sch_url)
+library(rvest)
+library(tidyverse)
+source <- readxl::read_excel("Data/source.xlsx", sheet = "Secondary")
+source <-
+source |>
+filter(necta_exam_centre_no != "Missing")
+schoollist <- source$necta_exam_centre_no
+schoollist <-  tolower(schoollist)
+years <- 2022
+all_tables <- list()
+failed_schools <- c()
+url <- "https://onlinesys.necta.go.tz/results/"
+for (school in schoollist) {
+sch_url <- paste0(url, year, "/csee/results/" ,school, ".htm")
+#  Try to read the page ---------------------------------------------------
+webpage <- tryCatch(
+read_html(sch_url),
+error = function(e) {
+cat("Could not open:",sch_url, "\n")
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+)
+if (is.null(webpage)) next  # skip this school-year
+tables <- html_nodes(webpage, "table")
+if (length(tables) == 0) {
+cat("No table found for", school, "in", "\n")
+failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+next
+}
+first_table <- html_table(tables[[1]], fill = TRUE)
+first_table[] <- lapply(first_table, as.character)
+table <- first_table |>
+select(-X1) |>
+slice(1, 4) |>
+rename(I = X2, II = X3, III = X4, IV = X5, "0" = X6) |>
+slice(-1) |>
+pivot_longer(everything(), names_to = "Division", values_to = "Count") |>
+mutate(
+necta_exam_centre_no = school,
+Year = year
+)
+all_tables[[paste(school, year, sep = "_")]] <- table
+}
+final_df <- bind_rows(all_tables)
+out <- final_df |>
+relocate(c(necta_exam_centre_no,Year), .before = Division)
+unique(out$necta_exam_centre_no)
+count(unique(out$necta_exam_centre_no))
+count(as.factor(unique(out$necta_exam_centre_no)))
+unique(out$necta_exam_centre_no)
+sum(as.factor(unique(out$necta_exam_centre_no)))
+length(as.factor(unique(out$necta_exam_centre_no)))
+writexl::write_xlsx(out,"Outputs/Out1.xlsx")
+library(rvest)
+library(tidyverse)
+source <- readxl::read_excel("Data/source.xlsx", sheet = "Primary")
+source <- readxl::read_excel("Data/source.xlsx", sheet = "Primary")
+View(source)
+source <-
+source |>
+filter(necta_exam_centre_no != "Missing")
+source <-
+source |>
+filter(necta_centre_no != "Missing")
+schoollist <- source$necta_centre_no
+schoollist <-  tolower(schoollist)
+year <- 2022
+all_tables <- list()
+failed_schools <- c()
+url <- "https://onlinesys.necta.go.tz/results/"
+for (school in schoollist) {
+sch_url <- paste0(url, year, "/psle/results/shl_" ,school, ".htm")
+#  Try to read the page ---------------------------------------------------
+webpage <- tryCatch(
+read_html(sch_url),
+error = function(e) {
+cat("Could not open:",sch_url, "\n")
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+)
+if (is.null(webpage)) next  # skip this school-year
+tables <- html_nodes(webpage, "table")
+if (length(tables) == 0) {
+cat("No table found for", school, "in", "\n")
+failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+next
+}
+first_table <- html_table(tables[[1]], fill = TRUE)
+first_table[] <- lapply(first_table, as.character)
+table <- first_table |>
+select(-X1) |>
+slice(1, 4) |>
+rename(I = X2, II = X3, III = X4, IV = X5, "0" = X6) |>
+slice(-1) |>
+pivot_longer(everything(), names_to = "Division", values_to = "Count") |>
+mutate(
+necta_exam_centre_no = school,
+Year = year
+)
+all_tables[[paste(school, year, sep = "_")]] <- table
+}
+View(table)
+final_df <- bind_rows(all_tables)
+View(final_df)
+length(unique(final_df$necta_exam_centre_no))
+if (length(failed_schools) > 0) {
+cat("\nThese school-year pages could not be processed:\n")
+print(failed_schools)
+}
+View(final_df)
+funal_temp <- final_df |>
+relocate(c(necta_exam_centre_no,Year), .before = Grade)
+library(tidyverse)
+funal_temp <- final_df |>
+relocate(c(necta_exam_centre_no,Year), .before = Grade)
+library(rvest)
+library(tidyverse)
+source <- readxl::read_excel("Data/source.xlsx", sheet = "Primary")
+source <-
+source |>
+filter(necta_centre_no != "Missing")
+schoollist <- source$necta_centre_no
+schoollist <-  tolower(schoollist)
+year <- 2022
+all_tables <- list()
+failed_schools <- c()
+url <- "https://onlinesys.necta.go.tz/results/"
+for (school in schoollist) {
+sch_url <- paste0(url, year, "/psle/results/shl_" ,school, ".htm")
+#  Try to read the page ---------------------------------------------------
+webpage <- tryCatch(
+read_html(sch_url),
+error = function(e) {
+cat("Could not open:",sch_url, "\n")
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+)
+if (is.null(webpage)) next  # skip this school-year
+tables <- html_nodes(webpage, "table")
+if (length(tables) == 0) {
+cat("No table found for", school, "in", "\n")
+failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+next
+}
+first_table <- html_table(tables[[1]], fill = TRUE)
+first_table[] <- lapply(first_table, as.character)
+table <- first_table |>
+select(-X1) |>
+slice(1, 4) |>
+rename(A = X2, B = X3, C = X4, D = X5, E = X6) |>
+slice(-1) |>
+pivot_longer(everything(), names_to = "Grade", values_to = "Count") |>
+mutate(
+necta_centre_no = school,
+Year = year
+)
+all_tables[[paste(school, year, sep = "_")]] <- table
+}
+final_df <- bind_rows(all_tables)
+funal_temp <- final_df |>
+relocate(c(necta_exam_centre_no,Year), .before = Grade)
+View(final_df)
+length(unique(final_df$necta_centre_no))
+if (length(failed_schools) > 0) {
+cat("\nThese school-year pages could not be processed:\n")
+print(failed_schools)
+}
+library(rvest)
+library(tidyverse)
+library(readxl)
+library(writexl)
+# --------------------------
+# Load school list
+# --------------------------
+source <- read_excel("Data/source.xlsx", sheet = "Primary") %>%
+filter(necta_centre_no != "Missing")
+schoollist <- tolower(source$necta_centre_no)
+# --------------------------
+# Parameters
+# --------------------------
+year <- 2022
+url_base <- "https://onlinesys.necta.go.tz/results/"
+# Create folders if they don't exist
+if (!dir.exists("Outputs")) dir.create("Outputs")
+# Create folders if they don't exist
+# if (!dir.exists("Outputs")) dir.create("Outputs")
+checkpoint_file <- "Outputs/primary_progress.rds"
+# If checkpoint exists, load progress
+if (file.exists(checkpoint_file)) {
+message("Resuming from previous checkpoint...")
+progress <- readRDS(checkpoint_file)
+all_tables <- progress$all_tables
+failed_schools <- progress$failed_schools
+processed <- names(all_tables)
+} else {
+all_tables <- list()
+failed_schools <- c()
+processed <- c()
+}
+# --------------------------
+# Scraper function
+# --------------------------
+scrape_school <- function(school, year) {
+sch_url <- paste0(url_base, year, "/psle/results/shl_", school, ".htm")
+webpage <- tryCatch(
+read_html(sch_url),
+error = function(e) {
+message("Could not open: ", sch_url)
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+)
+if (is.null(webpage)) return(NULL)
+tables <- html_nodes(webpage, "table")
+if (length(tables) == 0) {
+message("No table found for ", school, " in ", year)
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+first_table <- html_table(tables[[1]], fill = TRUE)
+first_table[] <- lapply(first_table, as.character)
+table <- first_table %>%
+select(-X1) %>%
+slice(1, 4) %>%
+rename(A = X2, B = X3, C = X4, D = X5, E = X6) %>%
+slice(-1) %>%
+pivot_longer(everything(), names_to = "Grade", values_to = "Count") %>%
+mutate(necta_centre_no = school, Year = year)
+return(table)
+}
+# --------------------------
+# Main loop with checkpoints
+# --------------------------
+counter <- 0
+for (school in schoollist) {
+key <- paste(school, year, sep = "_")
+if (key %in% processed) {
+next  # skip already processed schools
+}
+result <- scrape_school(school, year)
+if (!is.null(result)) {
+all_tables[[key]] <- result
+}
+counter <- counter + 1
+# Save progress every 500 schools
+if (counter %% 500 == 0) {
+saveRDS(list(all_tables = all_tables, failed_schools = failed_schools),
+checkpoint_file)
+message("Checkpoint saved after ", counter, " schools.")
+}
+# Small random delay (avoid blocking)
+Sys.sleep(runif(1, 0.3, 1.2))
+}
+# --------------------------
+# Final output
+# --------------------------
+final_df <- bind_rows(all_tables) %>%
+relocate(c(necta_centre_no, Year), .before = Grade)
+write_xlsx(final_df, "Outputs/Primary.xlsx")
+if (length(failed_schools) > 0) {
+message("\nThese school-year pages could not be processed:")
+print(failed_schools)
+}
+View(final_df)
+library(rvest)
+library(tidyverse)
+library(readxl)
+library(writexl)
+# --------------------------
+# Load school list
+# --------------------------
+source <- read_excel("Data/source.xlsx", sheet = "Primary") %>%
+filter(necta_centre_no != "Missing")
+library(rvest)
+library(tidyverse)
+library(readxl)
+library(writexl)
+# --------------------------
+# Load school list
+# --------------------------
+source <- read_excel("Data/source.xlsx", sheet = "Primary") %>%
+filter(necta_centre_no != "Missing")
+schoollist <- tolower(source$necta_centre_no)
+# --------------------------
+# Parameters
+# --------------------------
+year <- 2022
+url_base <- "https://onlinesys.necta.go.tz/results/"
+# Create folders if they don't exist
+# if (!dir.exists("Outputs")) dir.create("Outputs")
+checkpoint_file <- "Outputs/primary_progress.rds"
+# If checkpoint exists, load progress
+if (file.exists(checkpoint_file)) {
+message("Resuming from previous checkpoint...")
+progress <- readRDS(checkpoint_file)
+all_tables <- progress$all_tables
+failed_schools <- progress$failed_schools
+processed <- names(all_tables)
+} else {
+all_tables <- list()
+failed_schools <- c()
+processed <- c()
+}
+# --------------------------
+# Scraper function
+# --------------------------
+scrape_school <- function(school, year) {
+sch_url <- paste0(url_base, year, "/psle/results/shl_", school, ".htm")
+webpage <- tryCatch(
+read_html(sch_url),
+error = function(e) {
+message("Could not open: ", sch_url)
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+)
+if (is.null(webpage)) return(NULL)
+tables <- html_nodes(webpage, "table")
+if (length(tables) == 0) {
+message("No table found for ", school, " in ", year)
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+first_table <- html_table(tables[[1]], fill = TRUE)
+first_table[] <- lapply(first_table, as.character)
+table <- first_table %>%
+select(-X1) %>%
+slice(1, 4) %>%
+rename(A = X2, B = X3, C = X4, D = X5, E = X6) %>%
+slice(-1) %>%
+pivot_longer(everything(), names_to = "Grade", values_to = "Count") %>%
+mutate(necta_centre_no = school, Year = year)
+return(table)
+}
+# --------------------------
+# Main loop with checkpoints
+# --------------------------
+counter <- 0
+for (school in schoollist) {
+key <- paste(school, year, sep = "_")
+if (key %in% processed) {
+next  # skip already processed schools
+}
+result <- scrape_school(school, year)
+if (!is.null(result)) {
+all_tables[[key]] <- result
+}
+counter <- counter + 1
+# Save progress every 500 schools
+if (counter %% 500 == 0) {
+saveRDS(list(all_tables = all_tables, failed_schools = failed_schools),
+checkpoint_file)
+message("Checkpoint saved after ", counter, " schools.")
+}
+# Small random delay (avoid blocking)
+Sys.sleep(runif(1, 0.3, 1.2))
+}
+length(unique(final_df$necta_centre_no))
+library(rvest)
+library(tidyverse)
+source <- readxl::read_excel("Data/source.xlsx", sheet = "Primary")
+source <-
+source |>
+filter(necta_centre_no != "Missing")
+schoollist <- source$necta_centre_no
+schoollist <-  tolower(schoollist)
+chunk_size <- 1000
+# Create group index
+group_index <- ceiling(seq_along(schoollist) / chunk_size)
+# Split into list
+school_chunks <- split(schoollist, group_index)
+# Assign names to chunks
+names(school_chunks) <- paste0("chunk_", seq_along(school_chunks))
+names(school_chunks)
+length(school_chunks[["chunk_15"]])
+years <- c(2024,2023,2022)
+all_tables <- list()
+failed_schools <- c()
+url <- "https://onlinesys.necta.go.tz/results/"
+for (school in school_chunks[["chunk_8"]]) {
+for (year in years) {
+sch_url <- paste0(url, year, "/sfna/results/" ,school, ".htm")
+#  Try to read the page ---------------------------------------------------
+webpage <- tryCatch(
+read_html(sch_url),
+error = function(e) {
+cat("Could not open:",sch_url, "\n")
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+)
+if (is.null(webpage)) next  # skip this school-year
+tables <- html_nodes(webpage, "table")
+if (length(tables) == 0) {
+cat("No table found for", school, "in", "\n")
+failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+next
+}
+table <- html_table(tables[[2]], fill = TRUE)
+table[] <- lapply(table, as.character)
+results <- table |>
+select(-JINSI) |>
+slice(3) |>
+pivot_longer(everything(), names_to = "Grade", values_to = "Count") |>
+mutate(
+necta_centre_no = school,
+Year = year
+)
+all_tables[[paste(school, year, sep = "_")]] <- results
+}
+}
+temp <- bind_rows(all_tables)
+final <-
+temp |>
+relocate(necta_centre_no,Year, .before = Grade)
+length(unique(final$necta_centre_no))
+writexl::write_xlsx(final, "Temporary Files/std 4 /chunk_8.xlsx")
+library(rvest)
+library(tidyverse)
+source <- readxl::read_excel("Data/source.xlsx", sheet = "Primary")
+source <-
+source |>
+filter(necta_centre_no != "Missing")
+schoollist <- source$necta_centre_no
+schoollist <-  tolower(schoollist)
+chunk_size <- 1000
+# Create group index
+group_index <- ceiling(seq_along(schoollist) / chunk_size)
+# Split into list
+school_chunks <- split(schoollist, group_index)
+# Assign names to chunks
+names(school_chunks) <- paste0("chunk_", seq_along(school_chunks))
+names(school_chunks)
+years <- c(2024,2023,2022)
+all_tables <- list()
+failed_schools <- c()
+url <- "https://onlinesys.necta.go.tz/results/"
+for (school in school_chunks[["chunk_13"]]) {
+for (year in years) {
+sch_url <- paste0(url, year, "/sfna/results/" ,school, ".htm")
+#  Try to read the page ---------------------------------------------------
+webpage <- tryCatch(
+read_html(sch_url),
+error = function(e) {
+cat("Could not open:",sch_url, "\n")
+failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+return(NULL)
+}
+)
+if (is.null(webpage)) next  # skip this school-year
+tables <- html_nodes(webpage, "table")
+if (length(tables) == 0) {
+cat("No table found for", school, "in", "\n")
+failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+next
+}
+table <- html_table(tables[[2]], fill = TRUE)
+table[] <- lapply(table, as.character)
+results <- table |>
+select(-JINSI) |>
+slice(3) |>
+pivot_longer(everything(), names_to = "Grade", values_to = "Count") |>
+mutate(
+necta_centre_no = school,
+Year = year
+)
+all_tables[[paste(school, year, sep = "_")]] <- results
+}
+}
+temp <- bind_rows(all_tables)
+final <-
+temp |>
+relocate(necta_centre_no,Year, .before = Grade)
+length(unique(final$necta_centre_no))
+writexl::write_xlsx(final, "Temporary Files/std 4 /chunk_13.xlsx")

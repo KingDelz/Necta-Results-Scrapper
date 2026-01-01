@@ -1,0 +1,90 @@
+# pip install beautifulsoup4
+
+
+import pandas as pd
+import numpy as np
+import requests
+from bs4 import BeautifulSoup
+from pathlib import Path
+
+# ------------------- Data -------------------
+# Read source data
+source = pd.read_excel("Data/source.xlsx", sheet_name="Secondary")
+source = source[source['necta_exam_centre_no'] != "Missing"]
+
+schoollist = source['necta_exam_centre_no'].str.lower().tolist()
+
+# ------------------- Batches -------------------
+chunk_size = 1000
+school_chunks = {
+    f"chunk_{i+1}": schoollist[i:i+chunk_size]
+    for i in range(0, len(schoollist), chunk_size)
+}
+
+print(school_chunks.keys())
+print(len(school_chunks["chunk_1"]))
+
+# ------------------- Info -------------------
+years = [2024, 2023, 2022]
+all_tables = []
+failed_schools = []
+processed_schools = []
+
+url_base = "https://onlinesys.necta.go.tz/results/"
+
+# ------------------- Main Loop -------------------
+for school in school_chunks["chunk_2"]:
+    for year in years:
+        sch_url = f"{url_base}{year}/acsee/results/{school}.htm"
+        
+        try:
+            r = requests.get(sch_url, timeout=10)
+            r.raise_for_status()
+        except Exception as e:
+            print(f"Could not open: {sch_url}")
+            failed_schools.append(f"{school}_{year}")
+            continue
+        
+        soup = BeautifulSoup(r.text, "html.parser")
+        tables = soup.find_all("table")
+        
+        if len(tables) == 0:
+            print(f"No table found for {school} in {year}")
+            failed_schools.append(f"{school}_{year}")
+            continue
+        
+        # Read first table into DataFrame
+        df = pd.read_html(str(tables[0]), flavor='bs4')[0]
+        df = df.astype(str)
+        
+        # Drop first column (X1)
+        df = df.drop(df.columns[0], axis=1)
+        
+        # Use first row as header
+        df.columns = df.iloc[0].values
+        df = df.iloc[-1:]  # last row only
+        
+        # Pivot longer
+        results = df.melt(var_name="Grade", value_name="Count")
+        results["Count"] = pd.to_numeric(results["Count"], errors="coerce")
+        results["necta_centre_no"] = school
+        results["Year"] = year
+        
+        all_tables.append(results)
+    
+    processed_schools.append(school)
+    
+    if len(set(processed_schools)) % 50 == 0:
+        print(f"Closed connections after {len(set(processed_schools))} schools")
+
+# ------------------- Combine -------------------
+if all_tables:
+    final = pd.concat(all_tables, ignore_index=True)
+    final = final[['necta_centre_no', 'Year', 'Grade', 'Count']]
+    
+    Path("Outputs").mkdir(parents=True, exist_ok=True)
+    final.to_excel("Outputs/formsix.xlsx", index=False)
+    
+    print(f"Saved {len(final)} rows for {len(final['necta_centre_no'].unique())} unique schools.")
+else:
+    print("No data collected.")

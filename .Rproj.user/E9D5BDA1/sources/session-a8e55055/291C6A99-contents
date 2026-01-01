@@ -1,0 +1,109 @@
+library(rvest)
+library(tidyverse)
+
+
+# Data --------------------------------------------------------------------
+
+source <- readxl::read_excel("Data/source.xlsx", sheet = "Secondary") 
+
+source <- 
+  source |> 
+  filter(necta_exam_centre_no != "Missing")
+
+schoollist <- source$necta_exam_centre_no
+schoollist <-  tolower(schoollist)
+
+
+# Batches -----------------------------------------------------------------
+
+chunk_size <- 1000
+
+# Create group index
+group_index <- ceiling(seq_along(schoollist) / chunk_size)
+
+# Split into list
+school_chunks <- split(schoollist, group_index)
+
+# Assign names to chunks
+names(school_chunks) <- paste0("chunk_", seq_along(school_chunks))
+
+
+names(school_chunks)
+#length(school_chunks[["chunk_19"]])  
+
+# Infos -------------------------------------------------------------------
+
+years <- c(2024,2023,2022)
+all_tables <- list()
+failed_schools <- c()
+
+url <- "https://onlinesys.necta.go.tz/results/"
+
+
+# Main Loop ---------------------------------------------------------------
+
+for (school in  schoollist ) {
+  
+  for (year in years) {
+    
+    sch_url <- paste0(url, year, "/acsee/results/" ,school, ".htm")  
+    
+    
+    #  Try to read the page ---------------------------------------------------
+    
+    webpage <- tryCatch(
+      read_html(sch_url),
+      error = function(e) {
+        cat("Could not open:",sch_url, "\n")
+        failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+        return(NULL)
+      }
+    )
+    
+    if (is.null(webpage)) next  # skip this school-year
+    
+    tables <- html_nodes(webpage, "table")
+    
+    if (length(tables) == 0) {
+      cat("No table found for", school, "in", "\n")
+      failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+      next
+    }
+    
+    table <- html_table(tables[[1]], fill = TRUE)
+    table[] <- lapply(table, as.character)
+    
+    results <- table |>
+      select(-X1)
+    
+    names(results) <- as.character(unlist(slice(results, 1)))
+    
+    results <- results |>
+      slice(n()) |> 
+      pivot_longer(
+        everything(),
+        names_to = "Grade",
+        values_to = "Count"
+      ) |> 
+      mutate(
+        Count = as.numeric(Count),
+        necta_centre_no = school,
+        Year = year
+      )
+    
+    all_tables[[paste(school, year, sep = "_")]] <- results
+  }
+}
+
+
+# Combine all into one dataframe, stacked by school and year --------------
+
+temp <- bind_rows(all_tables)
+
+final <- 
+  temp |> 
+  relocate(necta_centre_no,Year, .before = Grade)
+
+length(unique(final$necta_centre_no))
+
+writexl::write_xlsx(final, "Temporary Files/Form Two/chunk_1.xlsx")

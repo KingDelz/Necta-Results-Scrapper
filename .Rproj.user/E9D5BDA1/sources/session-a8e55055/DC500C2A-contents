@@ -1,0 +1,84 @@
+library(rvest)
+require(tidyverse)
+
+data <- readxl::read_xlsx("/Users/kingmushi/Documents/Oswald Mushi/Data Intel/Basic Schools Mar25/VIASHIRIA2025/Consolidated Secondary Education  Data, 2025.xlsx")
+
+data |> 
+  filter(Region == "Dar es Salaam") |> 
+  filter(`NECTA Exam Centre No.` != "n/a") |> 
+  select(`NECTA Exam Centre No.`,`School Name`) |> 
+  rename(necta_no = `NECTA Exam Centre No.`)-> schools
+
+schools <- schools |> 
+  mutate(necta_no = str_to_lower(necta_no))
+
+writexl::write_xlsx(schools,"/Users/kingmushi/Desktop/school_list.xlsx")
+
+# Info -------------------------------------------------------------------
+
+years <- c(2020,2021,2022,2023)
+all_tables <- list()
+failed_schools <- c()
+processed_schools <- c()
+
+
+url <- "https://maktaba.tetea.org/exam-results/CSEE"  
+
+# Main Loop ---------------------------------------------------------------
+
+
+for(i in seq_len(nrow(schools))){  
+
+  school = schools$necta_no[i]
+  schoolname = schools$`School Name`[i]
+  
+  for (year in years) {
+    
+    sch_url <- paste0(url, year ,"/" ,school, ".htm")  
+    
+    
+    #  Try to read the page ---------------------------------------------------
+    
+    webpage <- tryCatch(
+      read_html(sch_url),
+      error = function(e) {
+        cat("Could not open:",sch_url, "\n")
+        failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+        return(NULL)
+      }
+    )
+    
+    if (is.null(webpage)) next  
+    
+    tables <- html_nodes(webpage, "table")
+    
+    if (length(tables) == 0) {
+      cat("No table found for", school, "in", "\n")
+      failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+      next
+    }
+    
+    table <- html_table(tables[[3]], fill = TRUE)
+ 
+    names(table) <- as.character(unlist(slice(table, 1))) 
+     
+    table <- table |>  
+      slice(-1) |> mutate(
+        school_name = schoolname
+      )
+    
+    all_tables[[length(all_tables) + 1]] <- table
+  }
+  
+  processed_schools <- c(processed_schools, school)
+  
+  if (length(unique(processed_schools)) %% 100 == 0) {
+    closeAllConnections()
+    cat("Closed connections after", length(unique(processed_schools)), "schools\n")
+  }
+}
+
+temp <- bind_rows(all_tables)
+
+
+writexl::write_xlsx(temp, "/Users/kingmushi/Desktop/data.xlsx")

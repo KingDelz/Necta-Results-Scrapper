@@ -1,0 +1,103 @@
+library(rvest)
+library(tidyverse)
+
+
+# Data --------------------------------------------------------------------
+
+readxl::excel_sheets("Data/source.xlsx")
+
+source <- readxl::read_excel("Data/source.xlsx", sheet = "Secondary") 
+
+source <- 
+  source |> 
+  filter(necta_exam_centre_no != "Missing")
+
+schoollist <- source$necta_exam_centre_no
+schoollist <-  tolower(schoollist)
+
+
+# Info -------------------------------------------------------------------
+
+years <- c(2024,2023,2022)
+all_tables <- list()
+failed_schools <- c()
+processed_schools <- c()
+
+
+
+url <- "https://onlinesys.necta.go.tz/results/"
+
+# Main Loop ---------------------------------------------------------------
+
+for (school in schoollist) {
+  
+  for (year in years) {
+    
+    sch_url <- paste0(url, year, "/csee/results/" ,school, ".htm")  # csee, acsee
+    
+    
+    #  Try to read the page ---------------------------------------------------
+    
+    webpage <- tryCatch(
+      read_html(sch_url),
+      error = function(e) {
+        cat("Could not open:",sch_url, "\n")
+        failed_schools <<- c(failed_schools, paste(school, year, sep = "_"))
+        return(NULL)
+      }
+    )
+    
+    if (is.null(webpage)) next  
+    
+    tables <- html_nodes(webpage, "table")
+    
+    if (length(tables) == 0) {
+      cat("No table found for", school, "in", "\n")
+      failed_schools <- c(failed_schools, paste(school, year, sep = "_"))
+      next
+    }
+    
+    table <- html_table(tables[[1]], fill = TRUE)
+    table[] <- lapply(table, as.character)
+    
+    results <- table |>
+      select(-X1)
+    
+    names(results) <- as.character(unlist(slice(results, 1)))
+    
+    results <- results |>
+      slice(n()) |> 
+      pivot_longer(
+        everything(),
+        names_to = "Division",
+        values_to = "Count"
+      ) |> 
+      mutate(
+        Count = as.numeric(Count),
+        necta_centre_no = school,
+        Year = year
+      )
+    
+    all_tables[[paste(school, year, sep = "_")]] <- results
+  }
+  
+  processed_schools <- c(processed_schools, school)
+  
+  if (length(unique(processed_schools)) %% 100 == 0) {
+    closeAllConnections()
+    cat("Closed connections after", length(unique(processed_schools)), "schools\n")
+  }
+}
+
+
+# Combine --------------
+
+temp <- bind_rows(all_tables)
+
+final <- 
+  temp |> 
+  relocate(necta_centre_no,Year, .before = Grade)
+
+length(unique(final$necta_centre_no))
+
+writexl::write_xlsx(final, "Form 4.xlsx")

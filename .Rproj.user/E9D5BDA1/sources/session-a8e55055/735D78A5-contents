@@ -1,0 +1,69 @@
+
+install.packages("bulkreadr")
+
+require(bulkreadr)
+
+
+# Class four --------------------------------------------------------------
+
+classfour <- read_excel_files_from_dir(dir_path = "/Users/kingmushi/Documents/Oswald Mushi/Data Intel/School results/Temporary Files/std 4 /")
+
+View(classfour)
+
+writexl::write_xlsx(classfour, "/Users/kingmushi/Documents/Oswald Mushi/Data Intel/School results/Outputs/ClassFour.xlsx")
+
+
+
+
+# Form Six ----------------------------------------------------------------
+
+
+form_six <- read_excel_files_from_dir(dir_path = "Temporary Files/Form six/")
+
+writexl::write_xlsx(form_six, "Outputs/formsix.xlsx")
+
+
+# Class Seven -------------------------------------------------------------
+
+class_seven <- bulkreadr::read_excel_files_from_dir(dir_path = "Temporary Files/std 7/")
+
+length(unique(class_seven$necta_centre_no))
+
+writexl::write_xlsx(class_seven, "Outputs/classseven.xlsx")
+
+
+
+
+
+
+# BACKUP ------------------------------------------------------------------
+
+
+results <- table |>
+  select(-X1) |>
+  slice(1, 4) |>
+  rename(I = X2, II = X3, III = X4, IV = X5, "0" = X6) |>
+  slice(-1) |>
+  pivot_longer(everything(), names_to = "Grade", values_to = "Count") |> 
+  mutate(
+    necta_centre_no = school,
+    Year = year
+  )
+
+results <- table |>
+  select(-X1)
+
+names(results) <- as.character(unlist(slice(results, 1)))
+
+results <- results |>
+  slice(n()) |> 
+  pivot_longer(
+    everything(),
+    names_to = "Grade",
+    values_to = "Count"
+  ) |> 
+  mutate(
+    Count = as.numeric(Count),
+    necta_centre_no = school,
+    Year = year
+  )
