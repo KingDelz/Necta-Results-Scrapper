@@ -34,7 +34,7 @@ for (school in schoollist) {
   
   for (year in years) {
     
-    sch_url <- paste0(url, year, "/csee/results/" ,school, ".htm")  # csee, acsee
+    sch_url <- paste0(url, year, "/acsee/results/" ,school, ".htm")  # csee, acsee
     
     
     #  Try to read the page ---------------------------------------------------
